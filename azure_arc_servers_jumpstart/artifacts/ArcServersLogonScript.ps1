@@ -167,7 +167,7 @@ $SQLvmName = "ArcBox-SQL"
 $SQLvmvhdPath = "$Env:ArcBoxVMDir\${SQLvmName}.vhdx"
 
 # Verify if VHD files already downloaded especially when re-running this script
-if (!([System.IO.File]::Exists($win2k19vmvhdPath) -and [System.IO.File]::Exists($win2k12vmvhdPath) -and [System.IO.File]::Exists($Win2k22vmvhdPath) -and [System.IO.File]::Exists($Ubuntu01vmvhdPath) -and [System.IO.File]::Exists($Ubuntu02vmvhdPath) -and [System.IO.File]::Exists($SQLvmvhdPath))) {
+if (!([System.IO.File]::Exists($win2k19vmvhdPath) -and [System.IO.File]::Exists($win2k12vmvhdPath) -and [System.IO.File]::Exists($Win2k22vmvhdPath) -and [System.IO.File]::Exists($Ubuntu01vmvhdPath) -and [System.IO.File]::Exists($Ubuntu02vmvhdPath))) {
     <# Action when all if and elseif conditions are false #>
     $Env:AZCOPY_BUFFER_GB = 4
     # Other ArcBox flavors does not have an azcopy network throughput capping
@@ -262,11 +262,13 @@ if ((Get-VM -Name $Ubuntu02vmName -ErrorAction SilentlyContinue).State -ne "Runn
     Set-VM -Name $Ubuntu02vmName -AutomaticStartAction Start -AutomaticStopAction ShutDown
 }
 
-if ($deploySQL -and (Get-VM -Name $SQLvmName -ErrorAction SilentlyContinue).State -ne "Running") {
-    Remove-VM -Name $SQLvmName -Force -ErrorAction SilentlyContinue
-    New-VM -Name $SQLvmName -MemoryStartupBytes 12GB -BootDevice VHD -VHDPath $SQLvmvhdPath -Path $Env:ArcBoxVMDir -Generation 2 -Switch $switchName
-    Set-VMProcessor -VMName $SQLvmName -Count 2
-    Set-VM -Name $SQLvmName -AutomaticStartAction Start -AutomaticStopAction ShutDown
+if($deploySQL){
+    if ((Get-VM -Name $SQLvmName -ErrorAction SilentlyContinue).State -ne "Running") {
+        Remove-VM -Name $SQLvmName -Force -ErrorAction SilentlyContinue
+        New-VM -Name $SQLvmName -MemoryStartupBytes 12GB -BootDevice VHD -VHDPath $SQLvmvhdPath -Path $Env:ArcBoxVMDir -Generation 2 -Switch $switchName
+        Set-VMProcessor -VMName $SQLvmName -Count 2
+        Set-VM -Name $SQLvmName -AutomaticStartAction Start -AutomaticStopAction ShutDown
+    }
 }
 
 Write-Header "Enabling Guest Integration Service"
