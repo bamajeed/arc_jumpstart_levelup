@@ -38,6 +38,9 @@ param rdpPort string = '3389'
 @description('Override default SSH port 22 using this parameter. Default is 22. No changes will be made to the client VM.')
 param sshPort string = '22'
 
+@description('Choice to deploy the Arc-enabled SQL Server optional lab. Default is false.')
+param deploySQL bool = false
+
 @description('Your email address to configure alerts.')
 param emailAddress string
 
@@ -62,6 +65,7 @@ module clientVmDeployment 'clientVm/clientVm.bicep' = {
     location: location
     rdpPort: rdpPort
     sshPort: sshPort
+    deploySQL: deploySQL
   }
 }
 

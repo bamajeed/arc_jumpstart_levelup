@@ -12,6 +12,7 @@ $spnTenantId = $env:spnTenantId
 $subscriptionId = $env:subscriptionId
 $azureLocation = $env:azureLocation
 $resourceGroup = $env:resourceGroup
+$deploySQL = $env:deploySQL
 
 # Moved VHD storage account details here to keep only in place to prevent duplicates.
 $vhdSourceFolder = "https://jsvhds.blob.core.windows.net/arcbox"
@@ -212,7 +213,11 @@ if (!([System.IO.File]::Exists($win2k19vmvhdPath) -and [System.IO.File]::Exists(
         }
     }#>
 
-    azcopy cp $vhdSourceFolder/$sas $Env:ArcBoxVMDir --include-pattern "${Win2k19vmName}.vhdx;${Win2k22vmName}.vhdx;${Ubuntu01vmName}.vhdx;${Ubuntu02vmName}.vhdx;${SQLvmName}.vhdx;" --recursive=true --check-length=false --cap-mbps 1200 --log-level=ERROR --check-md5 NoCheck
+    if ($deploySQL) {
+        azcopy cp $vhdSourceFolder/$sas $Env:ArcBoxVMDir --include-pattern "${Win2k19vmName}.vhdx;${Win2k22vmName}.vhdx;${Ubuntu01vmName}.vhdx;${Ubuntu02vmName}.vhdx;${SQLvmName}.vhdx;" --recursive=true --check-length=false --cap-mbps 1200 --log-level=ERROR --check-md5 NoCheck
+    }else{
+        azcopy cp $vhdSourceFolder/$sas $Env:ArcBoxVMDir --include-pattern "${Win2k19vmName}.vhdx;${Win2k22vmName}.vhdx;${Ubuntu01vmName}.vhdx;${Ubuntu02vmName}.vhdx;" --recursive=true --check-length=false --cap-mbps 1200 --log-level=ERROR --check-md5 NoCheck
+    }
     azcopy cp $vhdSourceFolderESU/$sasESU $Env:ArcBoxVMDir --include-pattern "${Win2k12vmName}.vhdx;" --recursive=true --check-length=false --cap-mbps 1200 --log-level=ERROR --check-md5 NoCheck
 }
 
@@ -257,7 +262,7 @@ if ((Get-VM -Name $Ubuntu02vmName -ErrorAction SilentlyContinue).State -ne "Runn
     Set-VM -Name $Ubuntu02vmName -AutomaticStartAction Start -AutomaticStopAction ShutDown
 }
 
-if ((Get-VM -Name $SQLvmName -ErrorAction SilentlyContinue).State -ne "Running") {
+if ($deploySQL -and (Get-VM -Name $SQLvmName -ErrorAction SilentlyContinue).State -ne "Running") {
     Remove-VM -Name $SQLvmName -Force -ErrorAction SilentlyContinue
     New-VM -Name $SQLvmName -MemoryStartupBytes 12GB -BootDevice VHD -VHDPath $SQLvmvhdPath -Path $Env:ArcBoxVMDir -Generation 2 -Switch $switchName
     Set-VMProcessor -VMName $SQLvmName -Count 2
@@ -274,12 +279,14 @@ Start-VM -Name $Win2k22vmName
 Start-VM -Name $Ubuntu01vmName
 Start-VM -Name $Ubuntu02vmName
 Start-VM -Name $Win2k12MachineName
-Start-VM -Name $SQLvmName
+if($deploySQL){
+    Start-VM -Name $SQLvmName
+}
 
 Start-Sleep -seconds 20
 
 # Configure WinRM for 2012 machine
-$2012Machine= Get-VM $Win2k12MachineName
+$2012Machine = Get-VM $Win2k12MachineName
 $privateIpAddress = $2012Machine.networkAdapters.ipaddresses[0]
 Enable-PSRemoting
 set-item wsman:\localhost\client\trustedhosts -Concatenate -value $privateIpAddress -Force
@@ -305,7 +312,9 @@ Start-Sleep -Seconds 20
 Invoke-Command -VMName $Win2k19vmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
 Invoke-Command -VMName $Win2k22vmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
 Invoke-Command -ComputerName $Win2k12vmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
-Invoke-Command -VMName $SQLvmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
+if($deploySQL){
+    Invoke-Command -VMName $SQLvmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
+}
 
 Start-Sleep -Seconds 5
 
@@ -317,7 +326,10 @@ $Ubuntu02VmIp = Get-VM -Name $Ubuntu02vmName | Select-Object -ExpandProperty Net
 Write-Output "Transferring installation script to nested Windows VMs..."
 Copy-VMFile $Win2k19vmName -SourcePath "$agentScript\installArcAgent.ps1" -DestinationPath "$Env:ArcBoxDir\installArcAgent.ps1" -CreateFullPath -FileSource Host -Force
 Copy-VMFile $Win2k22vmName -SourcePath "$agentScript\installArcAgent.ps1" -DestinationPath "$Env:ArcBoxDir\installArcAgent.ps1" -CreateFullPath -FileSource Host -Force
-Copy-VMFile $SQLvmName -SourcePath "$agentScript\installArcAgent.ps1" -DestinationPath "$Env:ArcBoxDir\installArcAgent.ps1" -CreateFullPath -FileSource Host -Force
+if($deploySQL){
+    Copy-VMFile $SQLvmName -SourcePath "$agentScript\installArcAgent.ps1" -DestinationPath "$Env:ArcBoxDir\installArcAgent.ps1" -CreateFullPath -FileSource Host -Force
+
+}
 Copy-VMFile $Win2k12MachineName -SourcePath "$agentScript\installArcAgent.ps1" -DestinationPath "$Env:ArcBoxDir\installArcAgent.ps1" -CreateFullPath -FileSource Host -Force
 
 (Get-Content -path "$agentScript\installArcAgentUbuntu.sh" -Raw) -replace '\$spnClientId', "'$Env:spnClientId'" -replace '\$spnClientSecret', "'$Env:spnClientSecret'" -replace '\$resourceGroup', "'$Env:resourceGroup'" -replace '\$spnTenantId', "'$Env:spnTenantId'" -replace '\$azureLocation', "'$Env:azureLocation'" -replace '\$subscriptionId', "'$Env:subscriptionId'" | Set-Content -Path "$agentScript\installArcAgentModifiedUbuntu.sh"
@@ -487,14 +499,14 @@ Add-Type $code
 
 # Send telemtry
 $Url = "https://arcboxleveluptelemtry.azurewebsites.net/api/triggerDeployment?"
-$rowKey = -join ((97..122) | Get-Random -Count 10 | ForEach-Object {[char]$_})
+$rowKey = -join ((97..122) | Get-Random -Count 10 | ForEach-Object { [char]$_ })
 $headers = @{
-    'Content-Type'='application/json'
-    }
+    'Content-Type' = 'application/json'
+}
 $Body = @{
-    Location = $azureLocation
+    Location     = $azureLocation
     PartitionKey = "Location"
-    RowKey = $rowKey
+    RowKey       = $rowKey
 }
 $Body = $Body | ConvertTo-Json
 Invoke-RestMethod -Method 'Post' -Uri $url -Body $body -Headers $headers
