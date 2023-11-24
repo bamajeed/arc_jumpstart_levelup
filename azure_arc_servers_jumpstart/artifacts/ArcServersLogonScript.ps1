@@ -262,13 +262,13 @@ if ((Get-VM -Name $Ubuntu02vmName -ErrorAction SilentlyContinue).State -ne "Runn
     Set-VM -Name $Ubuntu02vmName -AutomaticStartAction Start -AutomaticStopAction ShutDown
 }
 
-if($deploySQL){
-    if ((Get-VM -Name $SQLvmName -ErrorAction SilentlyContinue).State -ne "Running") {
-        Remove-VM -Name $SQLvmName -Force -ErrorAction SilentlyContinue
-        New-VM -Name $SQLvmName -MemoryStartupBytes 10GB -BootDevice VHD -VHDPath $SQLvmvhdPath -Path $Env:ArcBoxVMDir -Generation 2 -Switch $switchName
-        Set-VMProcessor -VMName $SQLvmName -Count 2
-        Set-VM -Name $SQLvmName -AutomaticStartAction Start -AutomaticStopAction ShutDown
-    }
+#if($deploySQL){
+#    if ((Get-VM -Name $SQLvmName -ErrorAction SilentlyContinue).State -ne "Running") {
+#       Remove-VM -Name $SQLvmName -Force -ErrorAction SilentlyContinue
+#        New-VM -Name $SQLvmName -MemoryStartupBytes 10GB -BootDevice VHD -VHDPath $SQLvmvhdPath -Path $Env:ArcBoxVMDir -Generation 2 -Switch $switchName
+#        Set-VMProcessor -VMName $SQLvmName -Count 2
+#        Set-VM -Name $SQLvmName -AutomaticStartAction Start -AutomaticStopAction ShutDown
+#    }
 }
 
 Write-Header "Enabling Guest Integration Service"
@@ -281,9 +281,9 @@ Start-VM -Name $Win2k22vmName
 Start-VM -Name $Ubuntu01vmName
 Start-VM -Name $Ubuntu02vmName
 Start-VM -Name $Win2k12MachineName
-if($deploySQL){
-    Start-VM -Name $SQLvmName
-}
+#if($deploySQL){
+#    Start-VM -Name $SQLvmName
+#}
 
 Start-Sleep -seconds 20
 
@@ -316,9 +316,9 @@ Invoke-Command -VMName $Win2k22vmName -ScriptBlock { Get-NetAdapter | Restart-Ne
 #changing the computer name so that the VM, Computer and SQL server names are same
 Invoke-Command -VMName $Win2k22vmName -ScriptBlock { Rename-Computer -NewName $Win2k22vmName   -Force -Restart} -Credential $winCreds
 Invoke-Command -ComputerName $Win2k12vmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
-if($deploySQL){
-    Invoke-Command -VMName $SQLvmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
-}
+#if($deploySQL){
+#    Invoke-Command -VMName $SQLvmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
+#}
 
 Start-Sleep -Seconds 5
 
