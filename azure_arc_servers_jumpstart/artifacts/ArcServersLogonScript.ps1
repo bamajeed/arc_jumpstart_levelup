@@ -244,7 +244,7 @@ if ((Get-VM -Name $Win2k22vmName -ErrorAction SilentlyContinue).State -ne "Runni
     New-VM -Name $Win2k22vmName -MemoryStartupBytes 10GB -BootDevice VHD -VHDPath $SQLvmvhdPath -Path $Env:ArcBoxVMDir -Generation 2 -Switch $switchName
     Set-VMProcessor -VMName $Win2k22vmName -Count 2
     Set-VM -Name $Win2k22vmName -AutomaticStartAction Start -AutomaticStopAction ShutDown
-}
+    }
 
 if ((Get-VM -Name $Ubuntu01vmName -ErrorAction SilentlyContinue).State -ne "Running") {
     Remove-VM -Name $Ubuntu01vmName -Force -ErrorAction SilentlyContinue
@@ -313,6 +313,8 @@ Write-Header "Restarting Network Adapters"
 Start-Sleep -Seconds 20
 Invoke-Command -VMName $Win2k19vmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
 Invoke-Command -VMName $Win2k22vmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
+#changing the computer name so that the VM, Computer and SQL server names are same
+Invoke-Command -VMName $Win2k22vmName -ScriptBlock { Rename-Computer -NewName $Win2k22vmName   -Force -Restart} -Credential $winCreds
 Invoke-Command -ComputerName $Win2k12vmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
 if($deploySQL){
     Invoke-Command -VMName $SQLvmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
