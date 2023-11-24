@@ -21,16 +21,16 @@ param windowsAdminPassword string
 param logAnalyticsWorkspaceName string
 
 @description('Target GitHub account')
-param githubAccount string = 'Azure'
+param githubAccount string = 'bamajeed'
 
 @description('Target GitHub branch')
-param githubBranch string = 'main'
+param githubBranch string = '8-cores-test'
 
 @description('Choice to deploy Bastion to connect to the client VM')
 param deployBastion bool = false
 
 @description('User github account where they have forked https://github.com/microsoft/azure-arc-jumpstart-apps')
-param githubUser string = 'microsoft'
+param githubUser string = 'bamajeed'
 
 @description('Override default RDP port 3389 using this parameter. Default is 3389. No changes will be made to the client VM.')
 param rdpPort string = '3389'
@@ -39,7 +39,7 @@ param rdpPort string = '3389'
 param sshPort string = '22'
 
 @description('Choice to deploy the Arc-enabled SQL Server optional lab. Default is false.')
-param deploySQL bool = false
+param deploySQL bool = true
 
 @description('Your email address to configure alerts.')
 param emailAddress string
