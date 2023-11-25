@@ -287,7 +287,7 @@ Start-VM -Name $Win2k12MachineName
 
 Start-Sleep -seconds 20
 
-Invoke-Command -VMName $Win2k22vmName -ScriptBlock { Rename-Computer -NewName $Using:$Win2k22vmName -Force -Restart} -Credential $winCreds
+Invoke-Command -VMName $Win2k22vmName -ScriptBlock { Rename-Computer -NewName $Using:Win2k22vmName -Force -Restart} -Credential $winCreds
 
 # Configure WinRM for 2012 machine
 $2012Machine = Get-VM $Win2k12MachineName
