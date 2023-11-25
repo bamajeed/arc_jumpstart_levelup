@@ -242,8 +242,7 @@ if ((Get-VM -Name $Win2k12MachineName -ErrorAction SilentlyContinue).State -ne "
 if ((Get-VM -Name $Win2k22vmName -ErrorAction SilentlyContinue).State -ne "Running") {
     Remove-VM -Name $Win2k22vmName -Force -ErrorAction SilentlyContinue
     if($deploySQL){
-       New-VM -Name $Win2k22vmName -MemoryStartupBytes 10GB -BootDevice VHD -VHDPath $SQLvmvhdPath -Path $Env:ArcBoxVMDir -Generation 2 -Switch $switchName}
-    else{
+       New-VM -Name $Win2k22vmName -MemoryStartupBytes 10GB -BootDevice VHD -VHDPath $SQLvmvhdPath -Path $Env:ArcBoxVMDir -Generation 2 -Switch $switchName}else{
        New-VM -Name $Win2k22vmName -MemoryStartupBytes 10GB -BootDevice VHD -VHDPath $Win2k22vmvhdPath -Path $Env:ArcBoxVMDir -Generation 2 -Switch $switchName}
     #New-VM -Name $Win2k22vmName -MemoryStartupBytes 10GB -BootDevice VHD -VHDPath $SQLvmvhdPath -Path $Env:ArcBoxVMDir -Generation 2 -Switch $switchName
     Set-VMProcessor -VMName $Win2k22vmName -Count 2
@@ -291,7 +290,7 @@ Start-VM -Name $Win2k12MachineName
 
 Start-Sleep -seconds 20
 
-Invoke-Command -VMName $Win2k22vmName -ScriptBlock { Rename-Computer -NewName $Using:Win2k22vmName -Force -Restart} -Credential $winCreds
+#Invoke-Command -VMName $Win2k22vmName -ScriptBlock { Rename-Computer -NewName $Using:Win2k22vmName -Force -Restart} -Credential $winCreds
 
 # Configure WinRM for 2012 machine
 $2012Machine = Get-VM $Win2k12MachineName
