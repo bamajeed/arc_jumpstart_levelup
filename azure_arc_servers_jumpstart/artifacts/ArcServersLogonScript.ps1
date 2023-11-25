@@ -262,14 +262,14 @@ if ((Get-VM -Name $Ubuntu02vmName -ErrorAction SilentlyContinue).State -ne "Runn
     Set-VM -Name $Ubuntu02vmName -AutomaticStartAction Start -AutomaticStopAction ShutDown
 }
 
-if($deploySQL){
-    if ((Get-VM -Name $SQLvmName -ErrorAction SilentlyContinue).State -ne "Running") {
-        Remove-VM -Name $SQLvmName -Force -ErrorAction SilentlyContinue
-        New-VM -Name $SQLvmName -MemoryStartupBytes 10GB -BootDevice VHD -VHDPath $SQLvmvhdPath -Path $Env:ArcBoxVMDir -Generation 2 -Switch $switchName
-        Set-VMProcessor -VMName $SQLvmName -Count 2
-        Set-VM -Name $SQLvmName -AutomaticStartAction Start -AutomaticStopAction ShutDown
-    }
-}
+#if($deploySQL){
+#    if ((Get-VM -Name $SQLvmName -ErrorAction SilentlyContinue).State -ne "Running") {
+#        Remove-VM -Name $SQLvmName -Force -ErrorAction SilentlyContinue
+#        New-VM -Name $SQLvmName -MemoryStartupBytes 10GB -BootDevice VHD -VHDPath $SQLvmvhdPath -Path $Env:ArcBoxVMDir -Generation 2 -Switch $switchName
+#        Set-VMProcessor -VMName $SQLvmName -Count 2
+#        Set-VM -Name $SQLvmName -AutomaticStartAction Start -AutomaticStopAction ShutDown
+#    }
+#}
 
 Write-Header "Enabling Guest Integration Service"
 Get-VM | Get-VMIntegrationService | Where-Object { -not($_.Enabled) } | Enable-VMIntegrationService -Verbose
@@ -281,9 +281,9 @@ Start-VM -Name $Win2k22vmName
 Start-VM -Name $Ubuntu01vmName
 Start-VM -Name $Ubuntu02vmName
 Start-VM -Name $Win2k12MachineName
-if($deploySQL){
-    Start-VM -Name $SQLvmName
-}
+#if($deploySQL){
+#    Start-VM -Name $SQLvmName
+#}
 
 Start-Sleep -seconds 20
 
@@ -316,9 +316,9 @@ Start-Sleep -Seconds 20
 Invoke-Command -VMName $Win2k19vmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
 Invoke-Command -VMName $Win2k22vmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
 Invoke-Command -ComputerName $Win2k12vmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
-if($deploySQL){
-    Invoke-Command -VMName $SQLvmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
-}
+#if($deploySQL){
+#    Invoke-Command -VMName $SQLvmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
+#}
 
 Start-Sleep -Seconds 5
 
@@ -330,10 +330,10 @@ $Ubuntu02VmIp = Get-VM -Name $Ubuntu02vmName | Select-Object -ExpandProperty Net
 Write-Output "Transferring installation script to nested Windows VMs..."
 Copy-VMFile $Win2k19vmName -SourcePath "$agentScript\installArcAgent.ps1" -DestinationPath "$Env:ArcBoxDir\installArcAgent.ps1" -CreateFullPath -FileSource Host -Force
 Copy-VMFile $Win2k22vmName -SourcePath "$agentScript\installArcAgent.ps1" -DestinationPath "$Env:ArcBoxDir\installArcAgent.ps1" -CreateFullPath -FileSource Host -Force
-if($deploySQL){
-    Copy-VMFile $SQLvmName -SourcePath "$agentScript\installArcAgent.ps1" -DestinationPath "$Env:ArcBoxDir\installArcAgent.ps1" -CreateFullPath -FileSource Host -Force
-
-}
+#if($deploySQL){
+#    Copy-VMFile $SQLvmName -SourcePath "$agentScript\installArcAgent.ps1" -DestinationPath "$Env:ArcBoxDir\installArcAgent.ps1" -CreateFullPath -FileSource Host -Force
+#
+#}
 Copy-VMFile $Win2k12MachineName -SourcePath "$agentScript\installArcAgent.ps1" -DestinationPath "$Env:ArcBoxDir\installArcAgent.ps1" -CreateFullPath -FileSource Host -Force
 
 (Get-Content -path "$agentScript\installArcAgentUbuntu.sh" -Raw) -replace '\$spnClientId', "'$Env:spnClientId'" -replace '\$spnClientSecret', "'$Env:spnClientSecret'" -replace '\$resourceGroup', "'$Env:resourceGroup'" -replace '\$spnTenantId', "'$Env:spnTenantId'" -replace '\$azureLocation', "'$Env:azureLocation'" -replace '\$subscriptionId', "'$Env:subscriptionId'" | Set-Content -Path "$agentScript\installArcAgentModifiedUbuntu.sh"
